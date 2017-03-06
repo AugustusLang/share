@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:aop="http://www.springframework.org/schema/aop" 
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd 
+    http://www.springframework.org/schema/aop 
+    http://www.springframework.org/schema/aop/spring-aop-3.2.xsd 
+    http://www.springframework.org/schema/tx  
+    http://www.springframework.org/schema/tx/spring-tx-3.2.xsd ">
+   
+    <bean id="sharedDataSourcesService" class="com.jd.sharding.client.datasource.DefaultMultiDataSourcesService">
+        <property name="dataSourcePool">
+            <map>          
+            	<entry key="db0" value="db0"/>
+                <entry key="db1" value="db1"/>
+                <entry key="db2" value="db2"/>
+                <entry key="db3" value="db3"/>
+                <entry key="db4" value="db4"/>
+                <entry key="db5" value="db5"/>
+                <entry key="db6" value="db6"/>
+                <entry key="db7" value="db7"/>
+            </map>
+        </property>
+    </bean>
+ 
+    <bean id="transactionManagerService"
+		class="com.jd.sharding.client.transaction.DefaultMultipleTransactionService">
+		<property name="allTransactionManager">
+			<map> 
+				<entry key="db0" value-ref="db0transactionManager" />
+				<entry key="db1" value-ref="db1transactionManager" />
+				<entry key="db2" value-ref="db2transactionManager" />
+				<entry key="db3" value-ref="db3transactionManager" />
+				<entry key="db4" value-ref="db4transactionManager" />
+				<entry key="db5" value-ref="db5transactionManager" />
+				<entry key="db6" value-ref="db6transactionManager" />
+				<entry key="db7" value-ref="db7transactionManager" />
+			</map>
+		</property>
+	</bean>
+    
+    <!-- 配置自定义的SqlSessionTemplate模板，注入相关配置 -->
+    <bean id="sqlSessionTemplate" class="com.jd.sharding.client.framework.mybatis.support.CustomSqlSessionTemplate">
+        <constructor-arg ref="db0sqlSessionFactory" />
+        <property name="targetSqlSessionFactorys">
+            <map>     
+                <entry key="db0" value-ref="db0sqlSessionFactory" />
+                <entry key="db1" value-ref="db1sqlSessionFactory" />
+                <entry key="db2" value-ref="db2sqlSessionFactory" />
+                <entry key="db3" value-ref="db3sqlSessionFactory" />
+                <entry key="db4" value-ref="db4sqlSessionFactory" />
+                <entry key="db5" value-ref="db5sqlSessionFactory" />
+                <entry key="db6" value-ref="db6sqlSessionFactory" />
+                <entry key="db7" value-ref="db7sqlSessionFactory" />
+            </map> 
+        </property>
+    </bean>
+	 <bean id="simpleRouter" class="com.jd.sharding.client.router.SimpleRouter" autowire="byName">
+     <property name="shardConfig" ref="shardConfig"/>
+    </bean>
+    
+    <bean id="shardConfig" class="com.jd.sharding.client.config.ShardConfig">
+        <property name="tableConfig">
+            <map>
+            	<entry key="db_Config" value-ref="dbConfig"/>
+            </map>
+        </property>
+    </bean>
+    
+    <bean id="dbConfig" class="com.jd.sharding.client.config.DbConfig">
+        <property name="dbCount" value="8"/>
+        <property name="dataSourcesService" ref="sharedDataSourcesService" />
+        <property name="routeRule">
+            <bean class="com.jd.sharding.client.rule.SimpleRouteRule">
+                 <constructor-arg index="0" value="8"/>
+            </bean>
+        </property>
+    </bean>  
+    <bean class="com.jd.sharding.client.aspect.ShareAspect"/>
+    <bean class="com.jd.sharding.client.util.ShareBeanPostProcessor"/>
+    <bean id="springContextUtil" class="com.jd.sharding.client.util.SpringContextUtil" scope="singleton"/> 
+</beans>
